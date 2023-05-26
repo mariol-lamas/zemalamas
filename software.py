@@ -727,7 +727,7 @@ class App(customtkinter.CTk):
         #Creacion del frame datos-graficas
         tabla_info=Table(self.frame_infor,title='',headers=(u'Fecha',u'Dispositivo',u'Nº Personas',u'Tiempo_ejec',u'Longitud',u'Latitud'))
         tabla_info.place(x=0,y=500)
-        conexion= psycopg2.connect(host='localhost',database="detecciones", user="zelenza", password="zelenza2023")
+        conexion= psycopg2.connect(host='localhost',database="detecciones")
         self.cursor1=conexion.cursor()
         self.cursor1.execute("select fecha,dispositivo,numero_personas,tiempo_ejecucion,longitud,latitud from detecciones")
         fechas={}
