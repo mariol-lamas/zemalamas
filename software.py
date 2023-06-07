@@ -17,43 +17,16 @@ import matplotlib
 import cv2
 import subprocess
 import pyautogui
-from pynput.mouse import Listener
+import platform
 
 
 #Valores por defecto para la apariencia de las ventanas
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("green")
 
-#DEFINICION DE CLASE PARA EL CONTROL DEL RATON EN LA SELECCION
-#DEL AREA PARA LA DETECCION SOBRE LA PANTALLA
-class Mouse():
-    def __init__(self,*args,**kwargs):
-
-        self.i=0
-        self.list=[]
-
-    def on_click(self,x, y, button, pressed):
-        if self.i==0:
-            ...
-        else:
-            self.list.append(x)
-            self.list.append(y)
-        self.i+=1
-        if self.i==3:
-            self.listener.stop()
-            return self.list  
-    
-    def play(self):
-        with Listener(
-
-                on_click=self.on_click,
-
-        ) as self.listener:
-            self.listener.join()
-
 #DEFINICION DEL FRAME PARA LA TABLA
 class Table(tk.Frame):
-    def __init__(self, parent=None, title='',headers=[],height=10,*args,**kwargs):
+    def __init__(self, parent=None, title='',headers=None,height=10,*args,**kwargs):
         tk.Frame.__init__(self, parent,*args,**kwargs)
         self._title=tk.Label(self, text=title)
         self._headers=headers
@@ -88,13 +61,20 @@ class Table(tk.Frame):
 
 #DEFINICION DEL APLICATIVO
 class App(customtkinter.CTk):
-    def __init__(self):
+    def __init__(self,ancho,alto,sistema):
         super().__init__()
+        self.anch_pant=ancho
+        self.alt_pant=alto
+        self.sistema=sistema
+
+        #Definicion del alto y ancho de la ventana
+        self.ancho_vent=round(0.73*self.anch_pant)
+        self.alto_vent=round(0.72*self.alt_pant)
 
         # configure window
         self.ruta_prog = os.getcwd()
         self.title("Software Deteccion")
-        self.geometry(f'{1400}x{780}')
+        self.geometry(f'{self.ancho_vent}x{self.alto_vent}')
         self.resizable(width=False,height=False)
 
         # configure grid layout (4x4)
@@ -103,7 +83,7 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure((0, 1, 2), weight=1)
 
         # configuracion de la barra lateral
-        self.sidebar_frame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
+        self.sidebar_frame = customtkinter.CTkFrame(self, width=round(0.1*self.ancho_vent), corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(5, weight=1)
 
@@ -147,7 +127,7 @@ class App(customtkinter.CTk):
     def frame_inicio(self):
 
         #Creacion del frame
-        frame_ini = ctk.CTkFrame(self,width=650,height=550,corner_radius=10)
+        frame_ini = ctk.CTkFrame(self,width=round(0.464*self.ancho_vent),height=round(0.71*self.alto_vent),corner_radius=10)
         frame_ini.grid(row=0,column=1,pady=12,sticky='nsew')
         frame_ini.grid_columnconfigure((2, 3), weight=0)
         frame_ini.grid_rowconfigure((0, 1, 2), weight=1)
@@ -196,7 +176,7 @@ class App(customtkinter.CTk):
             text_scale=0.4
         )
         self.lista_labels=['persona', 'bicicleta', 'coche', 'motocicleta', 'avion', 'autobus', 'tren', 'camion', 'barco', 'semaforo',
-         'hidrante', 'señal de stop', 'parquimetro', 'banco', 'pajaro', 'gato', 'perro', 'caballo', 'oveja', 'vaca',
+         'hidrante', 'senal de stop', 'parquimetro', 'banco', 'pajaro', 'gato', 'perro', 'caballo', 'oveja', 'vaca',
          'elefante', 'oso', 'cebra', 'jirafa', 'mochila', 'paraguas', 'bolso', 'corbata', 'maleta', 'frisbee', 'esquis',
          'tabla de snowboard', 'pelota de deportes', 'cometa', 'bate de beisbol', 'guante de beisbol', 'patineta',
          'tabla de surf', 'raqueta de tenis', 'botella', 'copa de vino', 'taza', 'tenedor', 'cuchillo', 'cuchara',
@@ -226,14 +206,14 @@ class App(customtkinter.CTk):
                     try:
                         array = [
                             array
-                            for array, _, class_od, _ in detecciones if class_od == 0
+                            for array, _,_, class_od, _ in detecciones if class_od == 0
                         ][0]
                         if self.caras == True and array is not None:
                             persona = frame[round(array[1]):round(array[3]), round(array[0]):round(array[2])]
                             cv2.imwrite(f'{self.ruta_prog}/Imagenes/{self.imagenes_dir}.jpg', persona)
                             self.imagenes_dir += 1
-                    except:
-                        IndexError
+                    except IndexError:
+                        print('Error en el indice durante el proceso')
 
                     nombres = [
                         f'{self.lista_labels[class_id]}'  # {confidence:0.2f}'
@@ -272,13 +252,10 @@ class App(customtkinter.CTk):
         #Funcion para realizar deteccion en funcion del modo de deteccion
         #------------------
         def main():
-            etiq_video.place(x=10, y=60)
+            etiq_video.place(x=round(0.017*self.ancho_detec), y=round(0.064*self.alto_detec))
 
-            if self.modo=='Video' and self.checkbox_1.get()==1:
-                clase = clases_para_detect()
-                deteccion([0])
-            elif self.modo=='Webcam'and self.checkbox_1.get()==1:
-                clase = clases_para_detect()
+            if (self.modo=='Video' or self.modo=='Webcam') and self.checkbox_1.get()==1:
+                #clase = clases_para_detect()
                 deteccion([0])
             elif self.modo=='Imagen'and self.checkbox_1.get()==1:
                 clase = clases_para_detect()
@@ -308,6 +285,8 @@ class App(customtkinter.CTk):
                 img = Image.fromarray(frame)
                 img=img.resize((640,380),Image.ANTIALIAS)
                 img = ImageTk.PhotoImage(image=img)
+
+                #Aplicamos la imagen sobre la etiqueta
                 etiq_video.image = img
                 etiq_video.configure(image=img)
                 etiq_video.image = img
@@ -340,6 +319,8 @@ class App(customtkinter.CTk):
             #Definimos el máximo inicial
             self.max=0
             self.pers_vis_entr_max.delete(0)
+
+            #Definimos la fuente de informacion en funcion del modo de deteccion
             if self.modo=='Webcam':
                 self.video = cv2.VideoCapture(0)
             elif self.modo=='Video':
@@ -369,39 +350,46 @@ class App(customtkinter.CTk):
         #-------------------------------------------#
 
         #--------
-        #Funcion para comprobar si el video existe
+        #Funcion para comprobar si el video existe y su formato es correcto
         #--------
         def comprobacion_video(ruta):
             valor = ruta.rsplit(sep='.',maxsplit=1)
             if valor[1].lower()==('mp4'or'mov'):
-                ...
+                return True
             else:
                 print('\n El formato de video introducido no es válido\n'
                       'Los formatos permitidos son .mp4 .mov\n ')
+                return False
                 
         #------------
-        #Funcion para comprobar si la imagen existe
+        #Funcion para comprobar si la imagen existe y su formato es correcto
         #------------
         def comprobacion_img(ruta):
             valor = ruta.rsplit(sep='.', maxsplit=1)
-            print(ruta)
             if valor[1] == ('jpg' or 'png'or 'jpeg'):
-                ...
+                return True
             else:
                 print('\n El formato de la imagen introducido no es válido\n '
                       'Los formatos permitidos son .jpg .png .jpeg\n')
+                return False
                 
         #----------
         #Funcion para la venta de confirmacion d einfo enviada
         #-----------------
         def info_env():
+
+            #Definicion de la ventana
             vent=ctk.CTk()
             vent.geometry(f'{330}x{100}')
             vent.resizable(width=False,height=False)
             titulo=ctk.CTkLabel(vent,text='INFORMACION ENVIADA CORRECTAMENTE',font=ctk.CTkFont(size=14,weight='bold'))
             titulo.place(x=10,y=30)
+
+            #Funcion para cerrar la ventana una vez pulsado ok
             def cerrar_vent():
                 vent.destroy()
+
+            #Definicion del boton de ok
             boton_ok=ctk.CTkButton(vent,text='Ok',command=cerrar_vent)
             boton_ok.place(x=100,y=65)
 
@@ -425,20 +413,24 @@ class App(customtkinter.CTk):
                     if texto=='i':
                         self.modo='Imagen'
                         self.ruta = ruta
-                        comprobacion_img(self.ruta)
-                        textbox.delete('1.0','end')
-                        textbox.insert('0.0', text=(f'Modo de deteccion: {self.modo}\n'
+                        valor=comprobacion_img(self.ruta)
+                        if valor==True:
+                            textbox.delete('1.0','end')
+                            textbox.insert('0.0', text=(f'Modo de deteccion: {self.modo}\n'
                                             f''))
-                        info_env()
+                            info_env() 
 
                     #Actualizamos los parametros en caso de que se trate de un video
                     elif texto=='v':
                         self.modo = 'Video'
                         self.ruta=ruta
-                        textbox.delete('1.0', 'end')
-                        textbox.insert('0.0', text=(f'Modo de deteccion: {self.modo}\n'
+                        valor=comprobacion_video(self.ruta)
+                        if valor==True:
+                            textbox.delete('1.0', 'end')
+                            textbox.insert('0.0', text=(f'Modo de deteccion: {self.modo}\n'
                                             f''))
-                        info_env()
+                            info_env()
+                        
                     else:
                         print('\nEl comando introducido no existe revisa el manual de comandos\n')
 
@@ -466,9 +458,11 @@ class App(customtkinter.CTk):
         def pantalla_detect():
             #Aseguramos que no se esta realizando deteccion en la ventana principal
             detener()
+
             #Minimizamos la ventana principal
             app.iconify()
             self.posicion=[]
+
             #Creacion de la ventana secundaria
             ventana_sec=ctk.CTk()
             ventana_sec.geometry(f'{300}x{300}')
@@ -480,19 +474,27 @@ class App(customtkinter.CTk):
             frame_princ.place(x=25,y=0)
 
             #Personas vistas y cuadro de muestra
-            pers_vis=ctk.CTkLabel(frame_princ,text=f'Personas vistas:')
+            pers_vis=ctk.CTkLabel(frame_princ,text='Personas vistas:')
             pers_vis.place(x=5,y=10)
             pers_vis_entr_2=ctk.CTkEntry(frame_princ,width=110)
             pers_vis_entr_2.place(x=120,y=10)
+
+            #Modelo de deteccion para deteccion por pantalla
+            modelo1=YOLO('yolov8m.pt')
             
 
             #--Funciones del frame
             def parar():
-                ventana_sec.destroy()
+                #Para parar en caso de que se este ejecutanto por pantalla completa
+                if pant_compl.get()==1:
+                    pant_compl.deselect()
+                
+                #Para parar en caso de que se este ejecutando por region
+                self.validar=False
 
             def ini_detect():
                 
-                if pant_compl.get()==1:
+                if pant_compl.get()==1 :
 
                     #Toma de la captura y preprocesamiento de la imagen
                     img=pyautogui.screenshot()
@@ -500,50 +502,128 @@ class App(customtkinter.CTk):
                     img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
 
                     #Ejecucion de la prediccion
-                    resultaados = modelo(img, conf=0.3, classes=[0], verbose=False)[0]
+                    resultaados = modelo1(img, conf=0.5, classes=[0], verbose=False)[0]
                     detecciones = sv.Detections.from_yolov8(resultaados)
                     num_pers=len(detecciones)
                     pers_vis_entr_2.delete(0,2)
                     pers_vis_entr_2.insert(0,str(num_pers))
+                    print('ejecutando')
+
                     pers_vis_entr_2.after(2,ini_detect)
-                elif len(self.posicion)==4:
-                    img=pyautogui.screenshot(region=(self.posicion[0],self.posicion[1],self.posicion[2],self.posicion[3]))
+                elif len(self.posicion)==4 and self.validar==True:
+                    img=pyautogui.screenshot(region=(self.posicion[0],self.posicion[1],self.posicion[2]-self.posicion[0],self.posicion[3]-self.posicion[1]))
                     img=np.array(img)
                     img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
 
+
                     #Ejecucion de la prediccion
-                    resultaados = modelo(img, conf=0.3, classes=[0], verbose=False)[0]
+                    resultaados = modelo1(img, conf=0.5, classes=[0], verbose=False)[0]
                     detecciones = sv.Detections.from_yolov8(resultaados)
                     num_pers=len(detecciones)
                     pers_vis_entr_2.delete(0,2)
                     pers_vis_entr_2.insert(0,str(num_pers))
+                    print('ejecutando')
                     pers_vis_entr_2.after(2,ini_detect)
                 else:
                     print('Seleccione una region o marque pantalla completa')
                 
-            def eleccion():
-                print('Eligiendo recuadro...')
-                lista=Mouse()
-                lista.play()
-                self.posicion=lista.list
+            #Funcion para la eleccion del area de deteccion
+            def eleccion1():
                 if pant_compl.get()==1:
                     pant_compl.deselect()
-                print('El recuadro elegido tiene las siguientes cordenadas: ',self.posicion)
+                self.validar=False
 
+                #Crea una ventana transparente sobre la que haciendo drag con el raton se elige la zona
+                vent_transp=tk.Tk()
+                vent_transp.geometry(f'{self.winfo_screenwidth()}x{self.winfo_screenheight()}')
+                vent_transp.wait_visibility(self)
+                vent_transp.wm_attributes('-alpha',0.3)
+                
+                vent_transp.title('Click Me')
+
+                #Obtenemos las coordenadas al inicio del drag
+                def ini_drag(event):
+                    self.x_1=event.x
+                    self.y_1=event.y
+
+                #Obtenemos las coordenas del final del drag
+                def fin_drag(event):
+                    self.x_2=event.x
+                    self.y_2=event.y
+
+                    #En caso de que el punto se haya seleccionado correctament
+                    if self.x_1==self.x_2 and self.y_1==self.y_2 or self.y_2<self.y_1 or self.x_2<self.x_1:
+                        ...
+                    else:
+                        self.posicion=[self.x_1,self.y_1,self.x_2,self.y_2]
+
+                        #Introduccion de los valores de las coordenadas en la entradas correspondientes
+                        x1_entry.delete(0,4)
+                        x1_entry.insert(0,str(self.posicion[0]))
+                        x2_entry.delete(0,4)
+                        x2_entry.insert(0,str(self.posicion[2]))
+                        y1_entry.delete(0,4)
+                        y1_entry.insert(0,str(self.posicion[1]))
+                        y2_entry.delete(0,4)
+                        y2_entry.insert(0,str(self.posicion[3]))
+                        
+                        #Para permitir la deteccion ya que el punto elegido es correcto
+                        self.validar=True
+
+                        #Dibujo del recuadro elegido para la deteccion
+                        #canvas=tk.Canvas(vent_transp,width=self.winfo_screenwidth(),height=self.winfo_screenheight(),bg='black')
+                        #vent_transp.wait_visibility(canvas)
+                        #vent_transp.wm_attributes('-alpha',0.6)
+                        #canvas.create_rectangle(self.x_1,self.y_1,self.x_2,self.y_2,outline='white')
+                        #canvas.pack()
+                        vent_transp.destroy()
+
+                #Indica que al realizar acciones con el click izquierdo del mouse conduza a su respectiva funcion
+                vent_transp.bind('<ButtonPress-1>', ini_drag)  
+                vent_transp.bind('<ButtonRelease-1>',fin_drag)
+
+                vent_transp.mainloop()
+            
+            #Funcion para el boton de salir
+            def exit():
+                ventana_sec.destroy()
+                
             #Botones principales
-            bot_inciar=ctk.CTkButton(ventana_sec,text='Iniciar',command=ini_detect)
-            bot_inciar.place(x=5,y=250)
-            bot_parar=ctk.CTkButton(ventana_sec,text='Detener',command=parar)
-            bot_parar.place(x=150,y=250)
-            bot_elec_area=ctk.CTkButton(ventana_sec,text='Elegir recuadro',command=eleccion)
-            bot_elec_area.place(x=150,y=200)
+            bot_inciar=ctk.CTkButton(ventana_sec,text='Iniciar',command=ini_detect,width=75)
+            bot_inciar.place(x=15,y=250)
+            bot_inciar=ctk.CTkButton(ventana_sec,text='Detener',command=parar,width=75)
+            bot_inciar.place(x=100,y=250)
+            bot_parar=ctk.CTkButton(ventana_sec,text='Salir',command=exit,width=75)
+            bot_parar.place(x=190,y=250)
+            bot_elec_area=ctk.CTkButton(ventana_sec,text='Elegir recuadro',command=eleccion1)
+            bot_elec_area.place(x=90,y=200)
             pant_compl=ctk.CTkCheckBox(ventana_sec,text='Pantalla completa')
-            pant_compl.place(x=5,y=200)
+            pant_compl.place(x=90,y=170)
+
+            #Definicion textos y entradas de los puntos
+            x1=ctk.CTkLabel(frame_princ,text='X1')
+            x1.place(x=5,y=40)
+            x1_entry=ctk.CTkEntry(frame_princ,width=50)
+            x1_entry.place(x=25,y=40)
+            y1=ctk.CTkLabel(frame_princ,text='Y1')
+            y1.place(x=110,y=40)
+            y1_entry=ctk.CTkEntry(frame_princ,width=50)
+            y1_entry.place(x=130,y=40)
+            x2=ctk.CTkLabel(frame_princ,text='X2')
+            x2.place(x=5,y=70)
+            x2_entry=ctk.CTkEntry(frame_princ,width=50)
+            x2_entry.place(x=25,y=70)
+            y2=ctk.CTkLabel(frame_princ,text='Y2')
+            y2.place(x=110,y=70)
+            y2_entry=ctk.CTkEntry(frame_princ,width=50)
+            y2_entry.place(x=130,y=70)
+
 
         #-----
         #Funcion para abrir el navegador de archivos
         #------
         def explorador():
+            filename=()
 
             filetypes=(('Archivos de video',('*.mp4','*.mov')),
                         ('Archivos de imagen',('*.jpg','*jpeg','*.png')))
@@ -551,7 +631,7 @@ class App(customtkinter.CTk):
             filename = tk.filedialog.askopenfilename(initialdir = "/home/zelenza",
                                           title = "Elige un archivo",
                                           filetypes=filetypes)
-            if filename !=():
+            if filename !=() and filename!='':
                 terminacion=filename.split(sep='.')[1]
                 if terminacion=='mp4' or terminacion=='mov':
                     self.modo='Video'
@@ -569,42 +649,37 @@ class App(customtkinter.CTk):
                 else:
                     print('El archivo elegido no tiene el formato adecuado')
 
-                print(filename,
-                    terminacion)  
+
 
         ##########################################################################################
                     #Definicion del resto de widgets del frame detector
         ##########################################################################################
 
+        #Definicion del ancho y alto del frame de deteccion
+        self.ancho_detec=round(0.43*self.ancho_vent)
+        self.alto_detec= self.alto_vent
+
         #Creacion del frame
-        frame_dete = ctk.CTkFrame(self,width=600,height=770,corner_radius=0)
+        frame_dete = ctk.CTkFrame(self,width=self.ancho_detec,height=self.alto_detec,corner_radius=0)
         frame_dete.grid(row=0,column=1,pady=12,sticky='nsew')
         self.titulo_dete=ctk.CTkLabel(frame_dete,text='Deteccion',font=ctk.CTkFont(size=24,weight='bold'))
-        self.titulo_dete.place(x=450,y=10)
+        self.titulo_dete.place(x=round(0.75*self.ancho_detec),y=round(0.013*self.alto_vent))
 
         #Definicion etiqueta imagenes
         etiq_video = tk.Label(frame_dete)
-        etiq_video.place(x=10, y=50)
+        etiq_video.place(x=round(0.017*self.ancho_detec), y=round(0.064*self.alto_detec))
         self.boton_inciar_det=ctk.CTkButton(frame_dete,text='Iniciar',command=iniciar_web)
-        self.boton_inciar_det.place(x=200,y=430)
+        self.boton_inciar_det.place(x=round(0.3*self.ancho_detec),y=round(0.55*self.alto_detec))
         self.boton_detener_det=ctk.CTkButton(frame_dete,text='Detener',command=detener)
-        self.boton_detener_det.place(x=350,y=430)
+        self.boton_detener_det.place(x=round(0.58*self.ancho_detec),y=round(0.55*self.alto_detec))
 
         #Frame para los switches
         scrollable_frame = customtkinter.CTkScrollableFrame(frame_dete, label_text="Opciones",label_font=ctk.CTkFont(size=16,weight='bold'))
-        scrollable_frame.place(x=980,y=10)
+        scrollable_frame.place(x=round(1.63*self.ancho_detec),y=round(0.013*self.alto_detec))
         scrollable_frame.grid_columnconfigure(0, weight=1)
         self.scrollable_frame_switches = []
-        self.lista_objetos=['Todos','persona', 'bicicleta', 'coche', 'motocicleta', 'avion', 'autobus', 'tren', 'camion', 'barco', 'semaforo',
-         'hidrante', 'señal de stop', 'parquimetro', 'banco', 'pajaro', 'gato', 'perro', 'caballo', 'oveja', 'vaca',
-         'elefante', 'oso', 'cebra', 'jirafa', 'mochila', 'paraguas', 'bolso', 'corbata', 'maleta', 'frisbee', 'esquis',
-         'tabla de snowboard', 'pelota de deportes', 'cometa', 'bate de beisbol', 'guante de beisbol', 'patineta',
-         'tabla de surf', 'raqueta de tenis', 'botella', 'copa de vino', 'taza', 'tenedor', 'cuchillo', 'cuchara',
-         'cuenco', 'platano', 'manzana', 'sandwich', 'naranja', 'brocoli', 'zanahoria', 'perro caliente', 'pizza',
-         'dona', 'pastel', 'silla', 'sofa', 'planta en maceta', 'cama', 'mesa de comedor', 'inodoro', 'television',
-         'portatil', 'raton', 'control remoto', 'teclado', 'telefono celular', 'microondas', 'horno', 'tostadora',
-         'fregadero', 'refrigerador', 'libro', 'reloj', 'jarron', 'tijeras', 'osito de peluche', 'secador de pelo',
-         'cepillo de dientes']
+        self.lista_objetos=self.lista_labels
+        self.lista_objetos.insert(0,'Todos')
         i=0
         for elem in self.lista_objetos:
             self.switch = ctk.CTkSwitch(master=scrollable_frame, text=f"{elem}",command=soltar_listo)
@@ -612,51 +687,51 @@ class App(customtkinter.CTk):
             i+=1
             self.scrollable_frame_switches.append(self.switch)
         self.checkbox_1 = customtkinter.CTkCheckBox(frame_dete,text='Seleccion preparada',command=self.comprobar_switches)
-        self.checkbox_1.place(x=980,y=275)
+        self.checkbox_1.place(x=round(1.63*self.ancho_detec),y=round(0.35*self.alto_detec))
 
         #Barra introduccion de comandos
-        self.entrada_comandos=ctk.CTkEntry(frame_dete,placeholder_text='Introduce un comando',width=550)
-        self.entrada_comandos.place(x=10,y=700)
-        img=Image.open('/home/zelenza/Desktop/pruebasia/carpeta.png')
+        self.entrada_comandos=ctk.CTkEntry(frame_dete,placeholder_text='Introduce un comando',width=round(0.92*self.ancho_detec))
+        self.entrada_comandos.place(x=round(0.017*self.ancho_detec),y=round(0.9*self.alto_detec))
+        img=Image.open('./carpeta.png')
         img=ctk.CTkImage(light_image=img,dark_image=img)
         
         self.expl_arch=ctk.CTkButton(frame_dete,image=img,width=30,height=30,text='',command=explorador)
-        self.expl_arch.place(x=565,y=700)
+        self.expl_arch.place(x=round(0.94*self.ancho_detec),y=round(0.9*self.alto_detec))
         self.boton_comandos=ctk.CTkButton(frame_dete,text='Enviar',command=comandos)
-        self.boton_comandos.place(x=600,y=700)
+        self.boton_comandos.place(x=self.ancho_detec,y=round(0.9*self.alto_detec))
 
         #Frame de informacion
-        self.info_frame=ctk.CTkFrame(frame_dete,width=270,height=480,corner_radius=5)
-        self.info_frame.place(x=680,y=50)
+        self.info_frame_ancho=round(0.45*self.ancho_detec)
+        self.info_frame_alto=round(0.61*self.alto_detec)
+        self.info_frame=ctk.CTkFrame(frame_dete,width=self.info_frame_ancho,height=self.info_frame_alto,corner_radius=5)
+        self.info_frame.place(x=round(1.13*self.ancho_detec),y=round(0.064*self.alto_detec))
         self.titulo_info=ctk.CTkLabel(self.info_frame,text='Informacion', font=ctk.CTkFont(size=16,weight='bold'))
-        self.titulo_info.place(x=40,y=10)
-        self.pers_vis=ctk.CTkLabel(self.info_frame,text=f'Personas vistas:')
-        self.pers_vis.place(x=10,y=50)
+        self.titulo_info.place(x=round(0.16*self.info_frame_ancho),y=round(0.02*self.info_frame_alto))
+        self.pers_vis=ctk.CTkLabel(self.info_frame,text='Personas vistas:')
+        self.pers_vis.place(x=round(0.04*self.info_frame_ancho),y=round(0.104*self.info_frame_alto))
         self.pers_vis_entr=ctk.CTkEntry(self.info_frame)
-        self.pers_vis_entr.place(x=120,y=50)
-        self.pers_vis_max=ctk.CTkLabel(self.info_frame,text=f'Personas máximo vistas:')
-        self.pers_vis_max.place(x=10,y=80)
-        self.pers_vis_entr_max=ctk.CTkEntry(self.info_frame, width=100)
-        self.pers_vis_entr_max.place(x=160,y=80)
+        self.pers_vis_entr.place(x=round(0.47*self.info_frame_ancho),y=round(0.104*self.info_frame_alto))
+        self.pers_vis_max=ctk.CTkLabel(self.info_frame,text='Personas máximo vistas:')
+        self.pers_vis_max.place(x=round(0.04*self.info_frame_ancho),y=round(0.17*self.info_frame_alto))
+        self.pers_vis_entr_max=ctk.CTkEntry(self.info_frame, width=round(0.37*self.info_frame_ancho))
+        self.pers_vis_entr_max.place(x=round(0.62*self.info_frame_ancho),y=round(0.17*self.info_frame_alto))
 
         #Frame modos y rutas y botones
-        textbox = customtkinter.CTkTextbox(frame_dete, width=250,height=150)
-        textbox.place(x=980, y=310)
+        textbox = customtkinter.CTkTextbox(frame_dete, width=round(0.41*self.ancho_detec),height=round(0.19*self.alto_detec))
+        textbox.place(x=round(1.63*self.ancho_detec), y=round(0.4*self.alto_detec))
         textbox.insert('0.0', text=(f'Modo de deteccion: {self.modo}\n'
                                     f''))
         self.switch_guardar = ctk.CTkSwitch(frame_dete, text='Guardar output')
-        self.switch_guardar.place(x=980, y= 470 )
+        self.switch_guardar.place(x=round(1.63*self.ancho_detec), y= round(0.6*self.alto_detec) )
         self.switch_caras = ctk.CTkSwitch(frame_dete, text='Extraer personas')
-        self.switch_caras.place(x=980, y=500)
+        self.switch_caras.place(x=round(1.63*self.ancho_detec), y=round(0.64*self.alto_detec))
         self.switch_mostrar_caja = ctk.CTkSwitch(frame_dete, text='Dibujar recuadro')
-        self.switch_mostrar_caja.place(x=980, y=530)
+        self.switch_mostrar_caja.place(x=round(1.63*self.ancho_detec), y=round(0.68*self.alto_detec))
 
         #Boton deteccion sobre pantalla
         self.detect_pant=ctk.CTkButton(frame_dete,text='Deteccion sobre pantalla'
                                        ,command=pantalla_detect)
-        self.detect_pant.place(x=980,y=580)
-
-
+        self.detect_pant.place(x=round(1.63*self.ancho_detec),y=round(0.74*self.alto_detec))
 
         frame_dete.tkraise()
 
@@ -727,7 +802,7 @@ class App(customtkinter.CTk):
         #Creacion del frame datos-graficas
         tabla_info=Table(self.frame_infor,title='',headers=(u'Fecha',u'Dispositivo',u'Nº Personas',u'Tiempo_ejec',u'Longitud',u'Latitud'))
         tabla_info.place(x=0,y=500)
-        conexion= psycopg2.connect(host='localhost',database="detecciones")
+        conexion= psycopg2.connect(host='localhost',database="detecciones", user="zelenza", password="zelenza2023")
         self.cursor1=conexion.cursor()
         self.cursor1.execute("select fecha,dispositivo,numero_personas,tiempo_ejecucion,longitud,latitud from detecciones")
         fechas={}
@@ -750,9 +825,8 @@ class App(customtkinter.CTk):
         self._fig1_canvas=matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(
             self._fig1,master=self.frame_infor
         )
-        #self._fig1_canvas.draw()
-        #self._fig1_canvas.get_tk_widget().place(x=0,y=50)
-        self.vent_info.destroy()
+
+
     
     def database(self,lista):
         print('Cargando datos...')
@@ -764,9 +838,8 @@ class App(customtkinter.CTk):
                 for elem in self.cursor1:
                     print(elem)
                 print('Datos recibidos!')
-            except:
-                AttributeError
-            
+            except psycopg2.OperationalError:
+                print('Se ha producido un error durante la conexion con la base de datos')
 
 ##################################################################################################################################################################
 # ------------------------------------------- FIN DEL PROGRAMA --------------------------------------#
@@ -774,5 +847,5 @@ class App(customtkinter.CTk):
 
 #El siguiente codigo lanza la aplicacion al ejecutar el script
 if __name__ == "__main__":
-    app = App()
+    app = App(pyautogui.size().width,pyautogui.size().height,platform.system())
     app.mainloop()
