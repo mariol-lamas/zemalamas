@@ -27,8 +27,8 @@ EPOCHS=20
 
 #DATASET PARA EL ENTRENAMIENTO
 
-dir_entre='/home/zelenza/Desktop/yl_drn/dataset/train'
-dir_val='/home/zelenza/Desktop/yl_drn/dataset/valid'
+dir_entre='/home/Desktop/yl_drn/dataset/train'
+dir_val='/home/Desktop/yl_drn/dataset/valid'
 
 print('\nCargando ...\n')
 datos_val,datos_train=preparacion_dataframe(dir_entre,dir_val,ANCHORS,TAM_MOD)
